@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDragHandler
 {
     public GameObject AlwaysOnTop;
-    public InventoryManager InventoryManager;
+    public InventoryManager inventoryManager;
     private Canvas _canvas;
     private RectTransform _rectTransform;
     private CanvasGroup _canvasGroup;
@@ -59,22 +59,28 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         Image image = eventData.pointerEnter.GetComponentInChildren<Image>();
         itemGameObject = gameObject.GetComponentInParent<SlotItem>();
         if (!item || !image) { return; }
+
+        // case 1 : the slot drop not have the item
         if (image.sprite == null)
         {
+            inventoryManager.ChangeSlotItem(itemGameObject, item.index);
             itemGameObject.SetAvatar(null);
         }
-        else
+        else // case 2 : the slot drop have the item
         {
             imageColor = gameObject.GetComponent<Image>().color;
             imageColor.a = 255;
             gameObject.GetComponent<Image>().color = imageColor;
             itemGameObject.SetAvatar(image.sprite);
+            print(item.index);
+            print(itemGameObject.index);
+            inventoryManager.SwapSlotItem(itemGameObject,item);
         }
         item.SetAvatar(currentAvatar);
 
         if (item.isInHotBar)
         {
-            InventoryManager.MoveItemToHotbar(itemGameObject,item.index);
+            inventoryManager.MoveItemToHotbar(itemGameObject,item.index);
         }
     }
 }

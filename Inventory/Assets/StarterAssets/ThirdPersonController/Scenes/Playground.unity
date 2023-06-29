@@ -1777,10 +1777,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fcc74ff87f4c394ba1e4331d93b30a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dataAddInEdit:
-  - {fileID: 11400000, guid: e0f8fdd7fa8416e4ca0ec53c32eae021, type: 2}
-  - {fileID: 11400000, guid: e0f8fdd7fa8416e4ca0ec53c32eae021, type: 2}
-  - {fileID: 11400000, guid: e0f8fdd7fa8416e4ca0ec53c32eae021, type: 2}
+  dataAddInEdit: []
 --- !u!224 &1322090834 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3226300588877319936, guid: 7cd07845431c7e045b984a4dd447140f, type: 3}

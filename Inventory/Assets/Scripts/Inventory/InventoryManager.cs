@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditorInternal.VersionControl;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -34,6 +35,7 @@ public class InventoryManager : MonoBehaviour
     {
         if (itemsInventory.Data != null)
         {
+            int count = 0;
             foreach (var item in itemsInventory.Data)
             {
                 if (item.isInHotBar)
@@ -46,10 +48,24 @@ public class InventoryManager : MonoBehaviour
                 slotItemGO.GetComponent<RectTransform>().localScale = Vector3.one;
                 slotItemGO.GetComponent<SlotItem>().GetComponentInChildren<DragAndDrop>().AlwaysOnTop = alwaysOnTop;
                 slotItemGO.GetComponent<SlotItem>().SetData(item.data);
-                slotItemGO.GetComponent<SlotItem>().GetComponentInChildren<DragAndDrop>().InventoryManager = this;
-            }
+                slotItemGO.GetComponent<SlotItem>().index = item.index;
+                slotItemGO.GetComponent<SlotItem>().GetComponentInChildren<DragAndDrop>().inventoryManager = this;
+                slotItemGO.name = "Item " + count;
+                count++;
+            }        
         }
         isSpawn = true;
+    }
+
+    public void ChangeSlotItem(SlotItem item,int newIndex)
+    {
+        itemsInventory.Data[item.index].index = newIndex; 
+    }
+    public void SwapSlotItem(SlotItem firstItem, SlotItem secondItem)
+    {
+        int temp = itemsInventory.Data[firstItem.index].index;
+        itemsInventory.Data[firstItem.index].index = secondItem.index;
+        itemsInventory.Data[secondItem.index].index = temp;
     }
 
     public void AddItemToInventory(SlotItem item)
@@ -73,6 +89,6 @@ public class InventoryManager : MonoBehaviour
     }
     private void OnApplicationQuit()
     {
-     
+
     }
 }
