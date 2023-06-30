@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb13254c65e506e409b8ea852cb93c71, type: 3}
-  m_Name: apple
+  m_Name: Ammor
   m_EditorClassIdentifier: 
-  data: {fileID: 11400000, guid: 055005d9de586284dbae923e61d2658b, type: 2}
+  data: {fileID: 11400000, guid: de3e3feaae5911c4492ceab3e9f2b775, type: 2}
   amount: 1
-  indexSlot: 9
-  indexList: 0
+  indexSlot: 4
+  indexList: 1
   isInHotBar: 0

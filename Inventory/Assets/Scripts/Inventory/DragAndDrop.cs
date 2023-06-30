@@ -72,8 +72,6 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
             imageColor.a = 255;
             gameObject.GetComponent<Image>().color = imageColor;
             itemGameObject.SetAvatar(image.sprite);
-            print(item.index);
-            print(itemGameObject.index);
             inventoryManager.SwapSlotItem(itemGameObject,item);
         }
         item.SetAvatar(currentAvatar);

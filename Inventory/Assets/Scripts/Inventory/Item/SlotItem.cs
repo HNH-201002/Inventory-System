@@ -19,12 +19,12 @@ public class SlotItem : MonoBehaviour
             return _avatar;
         }
     }
-    private ItemScriptableObject _data;
+    private ItemDataScriptableObject _data;
 
     public void Start()
     {
         if (!_data) { return; }
-        _avatar.sprite = Resources.Load<Sprite>("Items/" + _data.avatarName);
+        _avatar.sprite = Resources.Load<Sprite>("Items/" + _data.data.avatarName);
         if (_avatar.sprite == null)
         {
             HideSlot();
@@ -64,11 +64,11 @@ public class SlotItem : MonoBehaviour
         if (_avatar == null) return null ;
         return Avatar.sprite;
     }
-    public void SetData(ItemScriptableObject data)
+    public void SetData(ItemDataScriptableObject data)
     {
         this._data = data;
     }
-    public ItemScriptableObject GetData()
+    public ItemDataScriptableObject GetData()
     {
         return _data;
     }

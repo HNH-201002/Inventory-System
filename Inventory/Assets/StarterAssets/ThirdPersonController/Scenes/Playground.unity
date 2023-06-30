@@ -1761,6 +1761,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b28c968d6dec7074b89578cc53bc4dc6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  amountOfSlot: 10
   slotItem: {fileID: 3226300588877319943, guid: 7cd07845431c7e045b984a4dd447140f, type: 3}
   inventoryContainer: {fileID: 1117131198}
   hotBarContainer: {fileID: 1805416637}

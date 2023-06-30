@@ -9,6 +9,7 @@ public class ItemDataScriptableObject : ScriptableObject
 {
     public ItemScriptableObject data;
     public int amount;
-    public int index;
+    public int indexSlot;
+    public int indexList;
     public bool isInHotBar;
 }

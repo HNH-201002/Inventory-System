@@ -30,7 +30,7 @@ public class ItemDataBase : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        Data.Sort((item1, item2) => item1.index.CompareTo(item2.index));
+        Data.Sort((item1, item2) => item1.indexSlot.CompareTo(item2.indexSlot));
         instance.Save(Data, path);
         print("Saved");
     }
