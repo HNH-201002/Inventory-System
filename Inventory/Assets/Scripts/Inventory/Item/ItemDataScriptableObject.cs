@@ -11,5 +11,4 @@ public class ItemDataScriptableObject : ScriptableObject
     public int amount;
     public int indexSlot;
     public int indexList;
-    public bool isInHotBar;
 }

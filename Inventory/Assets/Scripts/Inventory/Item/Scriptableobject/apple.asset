@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   data: {fileID: 11400000, guid: 055005d9de586284dbae923e61d2658b, type: 2}
   amount: 1
-  indexSlot: 9
-  indexList: 0
+  indexSlot: 1
+  indexList: 1
   isInHotBar: 0

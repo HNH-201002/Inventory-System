@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -10,45 +10,38 @@ using static UnityEditor.Progress;
 
 public class InventoryManager : MonoBehaviour
 {
-    [SerializeField] private int amountOfSlot;
+    [SerializeField] private int hotbarSlotsCount;
+    [SerializeField] private int inventorySlotsCount;
     private ItemDataBase itemsInventory;
     [SerializeField] private GameObject slotItem;
     [SerializeField] private GameObject inventoryContainer;
     [SerializeField] private GameObject hotBarContainer;
-    private List<GameObject> slotHotBar = new List<GameObject>();
-    private List<GameObject> slotInventory = new List<GameObject>();
-    private List<GameObject> itemInHotBar;
+    private List<GameObject> slotList = new List<GameObject>();
     int count = 0;
     [SerializeField] private GameObject alwaysOnTop;
-    bool isSpawn;
+
+    private const string SlotNamePrefix = "Item ";
 
     private void Awake()
     {
         itemsInventory = GetComponent<ItemDataBase>();
-        if (isSpawn) return;
-        foreach (var slot in hotBarContainer.GetComponentsInChildren<SlotItem>())
-        {
-            slotHotBar.Add(slot.gameObject);
-            slot.index = count;
-            slot.isInHotBar = true;
-            count++;
-        }
+        DragAndDrop.OnMoveItem += MoveItem;
+        DragAndDrop.OnSwapItems += SwapSlots;
     }
     private void Start()
     {
         int count = 0;
-        for (int i = 0; i < amountOfSlot; i++)
+        for (int i = 0; i < inventorySlotsCount; i++)
         {
-            GameObject slotItemGO = Instantiate(slotItem, inventoryContainer.transform.localPosition, Quaternion.identity);
+            GameObject slotItemGO = CreateSlotItem(inventoryContainer, count);
+            slotList.Add(slotItemGO);
+            count++;
+        }
 
-            slotItemGO.transform.SetParent(inventoryContainer.transform);
-            slotItemGO.GetComponent<RectTransform>().localScale = Vector3.one;
-            slotItemGO.name = "Item " + count;
-
-            slotItemGO.GetComponent<SlotItem>().GetComponentInChildren<DragAndDrop>().AlwaysOnTop = alwaysOnTop;
-            slotItemGO.GetComponent<SlotItem>().GetComponentInChildren<DragAndDrop>().inventoryManager = this;
-            slotItemGO.GetComponent<SlotItem>().index = count;
-            slotInventory.Add(slotItemGO);
+        for (int i = 0; i < hotbarSlotsCount; i++)
+        {
+            GameObject slotItemGO = CreateSlotItem(hotBarContainer, count, true);
+            slotList.Add(slotItemGO);
             count++;
         }
         if (itemsInventory.Data != null)
@@ -56,61 +49,60 @@ public class InventoryManager : MonoBehaviour
             int countIndex = 0;
             foreach (var item in itemsInventory.Data)
             {
-                if (item.isInHotBar)
-                {
-                    slotHotBar[item.indexSlot].GetComponent<SlotItem>().SetData(item);
-                    continue;
-                }
-                else
-                {
-                    slotInventory[item.indexSlot].GetComponent<SlotItem>().SetData(item);
-                    slotInventory[item.indexSlot].GetComponent<SlotItem>().GetData().indexList = countIndex;
-                    countIndex++;
-                }
+                slotList[item.indexSlot].GetComponent<SlotItem>().SetData(item);
+                slotList[item.indexSlot].GetComponent<SlotItem>().GetData().indexList = countIndex;
+                countIndex++;
             }        
         }
-        isSpawn = true;
+    }
+    private GameObject CreateSlotItem(GameObject parentContainer, int index, bool isInHotBar = false)
+    {
+        GameObject slotItemGO = Instantiate(slotItem, parentContainer.transform.localPosition, Quaternion.identity);
+        slotItemGO.transform.SetParent(parentContainer.transform);
+        slotItemGO.GetComponent<RectTransform>().localScale = Vector3.one;
+        slotItemGO.name = SlotNamePrefix + index;
+
+        var dragAndDrop = slotItemGO.GetComponent<SlotItem>().GetComponentInChildren<DragAndDrop>();
+        dragAndDrop.AlwaysOnTop = alwaysOnTop;
+        dragAndDrop.inventoryManager = this;
+
+        var slotItemComponent = slotItemGO.GetComponent<SlotItem>();
+        slotItemComponent.index = index;
+        slotItemComponent.isInHotBar = isInHotBar;
+
+        return slotItemGO;
+    }
+    public void MoveItem(SlotItem dragItem, SlotItem enterItem) // OK
+    {
+
+        var dragData = dragItem.GetData();
+        itemsInventory.Data[dragData.indexList].indexSlot = enterItem.index;
+        enterItem.SetData(dragData);
+        dragItem.SetData(null);
     }
 
-    public void ChangeSlotItem(SlotItem item,int newIndex)
+    public void SwapSlots(SlotItem firstItem, SlotItem secondItem)
     {
-        slotInventory[newIndex].GetComponent<SlotItem>().SetData(itemsInventory.Data[item.GetData().indexList]);
-        itemsInventory.Data[item.GetData().indexList].indexSlot = newIndex;
-        item.SetData(null);
-    }
-    public void SwapSlotItem(SlotItem firstItem, SlotItem secondItem)
-    {
-        var firstData = itemsInventory.Data[firstItem.GetData().indexList];
-        var secondData = itemsInventory.Data[secondItem.GetData().indexList];
-        int tempIndexSlot = itemsInventory.Data[firstItem.GetData().indexList].indexSlot;
-        itemsInventory.Data[firstItem.GetData().indexList].indexSlot = itemsInventory.Data[secondItem.GetData().indexList].indexSlot;
-        itemsInventory.Data[secondItem.GetData().indexList].indexSlot = tempIndexSlot;
+        var firstData = firstItem.GetData();
+        var secondData = secondItem.GetData();
+
+        int firstIndexList = firstData.indexList;
+        int firstIndexSlot = firstData.indexSlot;
+        int secondIndexList = secondData.indexList;
+        int secondIndexSlot = secondData.indexSlot;
+
+        itemsInventory.Data[firstIndexList].indexSlot = secondIndexSlot;
+        itemsInventory.Data[secondIndexList].indexSlot = firstIndexSlot;
 
         firstItem.SetData(secondData);
         secondItem.SetData(firstData);
     }
 
-    public void AddItemToInventory(SlotItem item)
+    private void OnDisable()
     {
-
+        var dragAndDrop = GetComponent<DragAndDrop>();
+        DragAndDrop.OnMoveItem -= MoveItem;
+        DragAndDrop.OnSwapItems -= SwapSlots;
     }
 
-    public void RemoveItemFromInventory(SlotItem item)
-    {
-
-    }
-
-    public void MoveItemToHotbar(SlotItem item, int hotbarIndex)
-    {
-
-    }
-
-    public void RemoveItemFromHotbar(SlotItem item)
-    {
-
-    }
-    private void OnApplicationQuit()
-    {
-
-    }
 }

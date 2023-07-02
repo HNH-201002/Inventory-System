@@ -23,22 +23,25 @@ public class SlotItem : MonoBehaviour
 
     public void Start()
     {
-        if (!_data) { return; }
+        LoadData();
+    }
+
+    private void LoadData()
+    {
+        if (!_data) 
+        {
+            SetAvatar(null);
+            return; 
+        }
+        _data.indexSlot = index;
         _avatar.sprite = Resources.Load<Sprite>("Items/" + _data.data.avatarName);
-        if (_avatar.sprite == null)
-        {
-            HideSlot();
-        }
-        else
-        {
-            DisplaySlot();
-        }
+        SetAvatar(_avatar.sprite);
     }
 
     public void SetAvatar(Sprite avatar)
     {
         _avatar.sprite = avatar;
-        if (avatar == null )
+        if (avatar == null)
         {
             HideSlot();
         }
@@ -67,6 +70,7 @@ public class SlotItem : MonoBehaviour
     public void SetData(ItemDataScriptableObject data)
     {
         this._data = data;
+        LoadData();
     }
     public ItemDataScriptableObject GetData()
     {

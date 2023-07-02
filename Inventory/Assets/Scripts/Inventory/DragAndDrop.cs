@@ -12,11 +12,13 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
     private CanvasGroup _canvasGroup;
     private Vector2 _oriPosition;
     private Image _image;
-    Sprite currentAvatar;
     Transform parentDrag;
-    string _tagAvatar = "Avatar";
-    SlotItem itemGameObject;
-    Color imageColor;
+
+    public delegate void ItemMoveDelegate(SlotItem dragItem, SlotItem enterItem);
+
+    public static event ItemMoveDelegate OnMoveItem;
+    public static event ItemMoveDelegate OnSwapItems;
+
     private void Awake()
     {
         _rectTransform = GetComponent<RectTransform>();
@@ -26,12 +28,10 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
-     
         parentDrag = transform.parent;
+        if (gameObject.GetComponent<DragAndDrop>() == null) return;
         transform.SetParent(AlwaysOnTop.transform);
         transform.SetAsLastSibling();
-        if (eventData.pointerDrag.tag != _tagAvatar) return;
-        currentAvatar = _image.sprite;
         _oriPosition = _rectTransform.anchoredPosition;
         _canvasGroup.alpha = 0.6f;
         _canvasGroup.blocksRaycasts = false;
@@ -39,46 +39,54 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (eventData.pointerDrag.tag != _tagAvatar) return;
+        if (!eventData.pointerDrag) { return; }
+        if (eventData.pointerDrag.GetComponent<DragAndDrop>().GetComponent<Image>().sprite == null) return;
+        if (eventData.pointerDrag.GetComponent<DragAndDrop>() == null)
+            return;
         if (_canvas == null)
         {
             _canvas = GetComponentInParent<Canvas>();
         }
         _rectTransform.anchoredPosition += eventData.delta / _canvas.scaleFactor;
     }
-
     public void OnEndDrag(PointerEventData eventData)
     {
         _rectTransform.anchoredPosition = _oriPosition;
         _canvasGroup.alpha = 1;
         _canvasGroup.blocksRaycasts = true;
         transform.SetParent(parentDrag.transform);
-        if (eventData.pointerDrag == null || eventData.pointerEnter == null) return;
-
-        SlotItem item = eventData.pointerEnter.GetComponentInParent<SlotItem>();
-        Image image = eventData.pointerEnter.GetComponentInChildren<Image>();
-        itemGameObject = gameObject.GetComponentInParent<SlotItem>();
-        if (!item || !image) { return; }
-
-        // case 1 : the slot drop not have the item
-        if (image.sprite == null)
+        if (!eventData.pointerDrag || !eventData.pointerEnter) { return; }
+        if (gameObject.GetComponent<DragAndDrop>() == null
+              ||
+              eventData.pointerEnter.GetComponent<DragAndDrop>() == null ||
+             gameObject.GetComponentInParent<SlotItem>().GetData() == null)
         {
-            inventoryManager.ChangeSlotItem(itemGameObject, item.index);
-            itemGameObject.SetAvatar(null);
+            return;
         }
-        else // case 2 : the slot drop have the item
-        {
-            imageColor = gameObject.GetComponent<Image>().color;
-            imageColor.a = 255;
-            gameObject.GetComponent<Image>().color = imageColor;
-            itemGameObject.SetAvatar(image.sprite);
-            inventoryManager.SwapSlotItem(itemGameObject,item);
-        }
-        item.SetAvatar(currentAvatar);
 
-        if (item.isInHotBar)
+        SlotItem enterItem = eventData.pointerEnter.GetComponentInParent<SlotItem>();
+        Image enterItemImage = eventData.pointerEnter.GetComponent<Image>();
+        SlotItem dragItem = gameObject.GetComponentInParent<SlotItem>();
+
+        bool isEnterItemInHotbar = enterItem.isInHotBar;
+        bool isDragItemInHotbar = dragItem.isInHotBar;
+
+        // Case 1: The slot drop does not have an item
+        if (enterItemImage.sprite == null)
         {
-            inventoryManager.MoveItemToHotbar(itemGameObject,item.index);
+            if (isDragItemInHotbar)
+            {
+                OnMoveItem?.Invoke(dragItem, enterItem);
+            }
+            else
+            {
+                OnMoveItem?.Invoke(dragItem, enterItem);
+            }
+        }
+        // Case 2: The slot drop has an item
+        else
+        {         
+            OnSwapItems?.Invoke(dragItem, enterItem);
         }
     }
 }

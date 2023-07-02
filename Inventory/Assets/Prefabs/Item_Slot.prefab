@@ -143,6 +143,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abff8e678c914d64b8d633427b760f29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  index: 0
+  isInHotBar: 0
   _avatar: {fileID: 3226300589206657358}
 --- !u!1 &3226300589206657356
 GameObject:
@@ -247,6 +249,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AlwaysOnTop: {fileID: 0}
+  inventoryManager: {fileID: 0}
 --- !u!1 &3983080590641692991
 GameObject:
   m_ObjectHideFlags: 0
