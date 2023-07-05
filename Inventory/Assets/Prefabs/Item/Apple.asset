@@ -15,6 +15,6 @@ MonoBehaviour:
   id: 0
   Name: Apple
   avatarName: apple
-  typeItem: 0
+  typeItem: 1
   canConsume: 1
-  isStack: 1
+  canStack: 1

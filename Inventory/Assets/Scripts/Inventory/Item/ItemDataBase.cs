@@ -8,11 +8,11 @@ public class ItemDataBase : MonoBehaviour
     private DataManager instance;
 
     string path;
-    public List<ItemDataScriptableObject> Data { get; set; }
-    [SerializeField] private List<ItemDataScriptableObject> dataAddInEdit;
+    public Dictionary<int,List<ItemsDTO>> Data { get; set; }
+    [SerializeField] private  List<Items> dataAddInEdit;
     public void Awake()
     {
-        Data = new List<ItemDataScriptableObject>();
+        Data = new Dictionary<int, List<ItemsDTO>>();
         instance = DataManager.Instance;
         path = Application.persistentDataPath + "/data.json";
         if (instance.Load(path) != null)
@@ -21,18 +21,34 @@ public class ItemDataBase : MonoBehaviour
         }
         if (dataAddInEdit != null)
         {
-            foreach (ItemDataScriptableObject item in dataAddInEdit)
+            foreach (Items item in dataAddInEdit)
             {
-                Data.Add(item);
+                if (Data.TryGetValue(item.GetData().data.id,out List<ItemsDTO> list))
+                {
+                    Items newItem = new Items(item.GetData());
+                    list.Add(newItem.GetData());
+                }
+                else
+                {
+                    List<ItemsDTO> newList = new List<ItemsDTO>();
+                    Items newItem = new Items(item.GetData());
+                    newList.Add(newItem.GetData());
+                    Data.Add(newItem.GetData().data.id,newList);
+                }
             }
         }
     }
-
+    public void Save()
+    {
+        instance.Save(Data, path);
+    }
     private void OnApplicationQuit()
     {
-        Data.Sort((item1, item2) => item1.indexSlot.CompareTo(item2.indexSlot));
-        instance.Save(Data, path);
-        print("Saved");
+        if (instance != null && Data != null)
+        {
+            instance.Save(Data, path);
+            print("Saved");
+        }
     }
 }
 

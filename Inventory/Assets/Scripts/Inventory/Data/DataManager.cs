@@ -36,7 +36,7 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    public void Save(List<ItemDataScriptableObject> data, string path)
+    public void Save(Dictionary<int, List<ItemsDTO>> data, string path)
     {
         string jsonData = JsonConvert.SerializeObject(data, Formatting.Indented);
         if (!File.Exists(path))
@@ -46,7 +46,7 @@ public class DataManager : MonoBehaviour
 
         File.WriteAllText(path, jsonData);
     }
-    public List<ItemDataScriptableObject> Load(string path)
+    public Dictionary<int,List<ItemsDTO>> Load(string path)
     {
         if (File.Exists(path))
         {
@@ -54,14 +54,14 @@ public class DataManager : MonoBehaviour
             string jsonData = File.ReadAllText(path);
 
             // Chuyển đổi JSON thành danh sách đối tượng
-            List<ItemDataScriptableObject> data = JsonConvert.DeserializeObject<List<ItemDataScriptableObject>>(jsonData);
+            Dictionary<int, List<ItemsDTO>> data = JsonConvert.DeserializeObject<Dictionary<int, List<ItemsDTO>>>(jsonData);
             print("load successfully");
             return data;
         }
         else
         {
             Debug.LogWarning("No saved data found.");
-            return new List<ItemDataScriptableObject>();
+            return new Dictionary<int, List<ItemsDTO>>();
         }
     }
 }

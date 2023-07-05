@@ -11,7 +11,6 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
     private RectTransform _rectTransform;
     private CanvasGroup _canvasGroup;
     private Vector2 _oriPosition;
-    private Image _image;
     Transform parentDrag;
 
     public delegate void ItemMoveDelegate(SlotItem dragItem, SlotItem enterItem);
@@ -23,7 +22,6 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
     {
         _rectTransform = GetComponent<RectTransform>();
         _canvasGroup = GetComponent<CanvasGroup>();
-        _image = GetComponent<Image>();
         _canvas = GetComponentInParent<Canvas>();
     }
     public void OnBeginDrag(PointerEventData eventData)
@@ -68,24 +66,14 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         Image enterItemImage = eventData.pointerEnter.GetComponent<Image>();
         SlotItem dragItem = gameObject.GetComponentInParent<SlotItem>();
 
-        bool isEnterItemInHotbar = enterItem.isInHotBar;
-        bool isDragItemInHotbar = dragItem.isInHotBar;
-
         // Case 1: The slot drop does not have an item
         if (enterItemImage.sprite == null)
         {
-            if (isDragItemInHotbar)
-            {
-                OnMoveItem?.Invoke(dragItem, enterItem);
-            }
-            else
-            {
-                OnMoveItem?.Invoke(dragItem, enterItem);
-            }
+            OnMoveItem?.Invoke(dragItem, enterItem);
         }
         // Case 2: The slot drop has an item
         else
-        {         
+        {
             OnSwapItems?.Invoke(dragItem, enterItem);
         }
     }
