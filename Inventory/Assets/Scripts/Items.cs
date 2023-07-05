@@ -12,6 +12,10 @@ public class Items : MonoBehaviour
     {
         data = new ItemsDTO();
         data.data = dataItems;
+        if (data.amount == 0)
+        {
+            data.amount = 1;
+        }
     }
     public Items(ItemsDTO data)
     {

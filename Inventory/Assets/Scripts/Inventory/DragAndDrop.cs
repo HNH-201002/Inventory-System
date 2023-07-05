@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Networking;
@@ -53,6 +54,7 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         _canvasGroup.alpha = 1;
         _canvasGroup.blocksRaycasts = true;
         transform.SetParent(parentDrag.transform);
+        eventData.pointerDrag.GetComponentInParent<SlotItem>().GetComponentInChildren<TMP_Text>().transform.SetAsLastSibling();
         if (!eventData.pointerDrag || !eventData.pointerEnter) { return; }
         if (gameObject.GetComponent<DragAndDrop>() == null
               ||

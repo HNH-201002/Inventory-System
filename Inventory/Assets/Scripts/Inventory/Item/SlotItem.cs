@@ -10,7 +10,7 @@ public class SlotItem : MonoBehaviour
     [SerializeField] private Image _avatar;
     [SerializeField] private TMP_Text _textMeshPro;
 
-    public bool hasData;
+    public bool hasData = false;
     private Image Avatar
     {
         get
@@ -24,6 +24,10 @@ public class SlotItem : MonoBehaviour
     }
     private ItemsDTO _data;
 
+    public void Awake()
+    {
+        if (_textMeshPro == null) { _textMeshPro = GetComponent<TMP_Text>(); }
+    }
     public void Start()
     {
         LoadData();
@@ -31,11 +35,14 @@ public class SlotItem : MonoBehaviour
 
     private void LoadData()
     {
+
         if (!hasData) 
         {
             SetAvatar(null);
+            _textMeshPro.text = "";
             return; 
         }
+        _textMeshPro.transform.SetAsLastSibling();
         _textMeshPro.text = _data.amount.ToString();
         _data.indexSlot = index;
         _avatar.sprite = Resources.Load<Sprite>("Items/" + _data.data.avatarName);

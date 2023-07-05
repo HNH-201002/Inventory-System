@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
@@ -14,8 +15,6 @@ public class InventoryManager : MonoBehaviour
 
     private List<GameObject> slotList = new List<GameObject>();
 
-    private HashSet<ItemsDTO> nonFullStackItems = new HashSet<ItemsDTO>();
-
     private const string SlotNamePrefix = "Item ";
     public List<int> emptySlot = new List<int>();
 
@@ -26,7 +25,8 @@ public class InventoryManager : MonoBehaviour
         DragAndDrop.OnMoveItem += MoveItem;
         DragAndDrop.OnSwapItems += SwapSlots;
         GameManager.OnFullStack += Add;
-        GameManager.OnAmountOfItemChanged += ReloadItem;
+        GameManager.OnStackCompleteItem += StackCompleteItem;
+        GameManager.OnStackWithRemainder += StackWithRemainder;
     }
     private void Start()
     {
@@ -46,16 +46,25 @@ public class InventoryManager : MonoBehaviour
         }
         if (data != null && data.Count > 0)
         {
-            foreach (var key in data.Keys)
+            foreach (var key in data.Keys.ToList()) 
             {
-                foreach (var item in data[key])
+                int count = 0;
+                var itemList = data[key].ToList();
+
+                foreach (var item in itemList)
                 {
+                    if (item.amount < 0)
+                    {
+                        data[key].Remove(item);
+                        continue;
+                    }
                     slotList[item.indexSlot].GetComponent<SlotItem>().SetData(item);
-                    slotList[item.indexSlot].GetComponent<SlotItem>().GetData().indexList = key;
+                    slotList[item.indexSlot].GetComponent<SlotItem>().GetData().indexList = count;
                     emptySlot[item.indexSlot] = 0;
+                    count++;
                     if (item.amount < 64)
                     {
-                        nonFullStackItems.Add(item);
+                        //TODO : ?
                     }
                 }
             }
@@ -83,7 +92,7 @@ public class InventoryManager : MonoBehaviour
 
         enterItem.SetData(dragData);
 
-        dragItem.SetData(null,false);
+        dragItem.SetData(null);
 
         emptySlot[dragItem.index] = 1;
         emptySlot[enterItem.index] = 0;
@@ -94,32 +103,55 @@ public class InventoryManager : MonoBehaviour
         var firstData = firstItem.GetData();
         var secondData = secondItem.GetData();
 
+        if (firstData.data.id == secondData.data.id)
+        {
+            gameManager.StackTwoItemHandler(firstData,secondData);
+            return;
+        }
         firstItem.SetData(secondData);
         secondItem.SetData(firstData);
     }
     public void Add(Items data,bool check = false)
     {
-        for (int i = 0; i < emptySlot.Count; i++)
+        if (data.GetData().data.canStack)
         {
-            if (emptySlot[i] == 0) continue;
 
-            slotList[i].GetComponent<SlotItem>().SetData(data.GetData());
-            emptySlot[i] = 0;
-            gameManager.AddItem(data);
-            OnAddedItem?.Invoke();
-            return;
         }
-        print("Full inventory");
+        else
+        {
+            for (int i = 0; i < emptySlot.Count; i++)
+            {
+                if (emptySlot[i] == 0) continue;
+
+                slotList[i].GetComponent<SlotItem>().SetData(data.GetData());
+                emptySlot[i] = 0;
+                gameManager.AddItem(data);
+                OnAddedItem?.Invoke();
+                return;
+            }
+            print("Full inventory");
+        }
     }
-    public void ReloadItem(Items data)
+    public void StackCompleteItem(ItemsDTO dragItem,ItemsDTO enterItem) 
     {
-        slotList[data.GetData().indexList].GetComponent<SlotItem>().SetData(data.GetData());
+        slotList[dragItem.indexSlot].GetComponent<SlotItem>().SetData(dragItem,false);
+        emptySlot[dragItem.indexSlot] = 1;
+        slotList[enterItem.indexSlot].GetComponent<SlotItem>().SetData(enterItem,true);
+    }
+    public void StackWithRemainder(ItemsDTO dragItem, ItemsDTO enterItem)
+    {
+        slotList[dragItem.indexSlot].GetComponent<SlotItem>().SetData(dragItem, true);
+        slotList[enterItem.indexSlot].GetComponent<SlotItem>().SetData(enterItem, true);
     }
     private void OnDisable()
     {
         var dragAndDrop = GetComponent<DragAndDrop>();
         DragAndDrop.OnMoveItem -= MoveItem;
         DragAndDrop.OnSwapItems -= SwapSlots;
+
+        GameManager.OnFullStack -= Add;
+        GameManager.OnStackCompleteItem -= StackCompleteItem;
+        GameManager.OnStackWithRemainder -= StackWithRemainder;
     }
 
 }
