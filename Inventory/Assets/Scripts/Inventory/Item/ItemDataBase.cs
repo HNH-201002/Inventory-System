@@ -49,6 +49,7 @@ public class ItemDataBase : MonoBehaviour
         {
             instance.Save(Data, path);
             print("Saved");
+            print("Path : " + path);
         }
     }
 }

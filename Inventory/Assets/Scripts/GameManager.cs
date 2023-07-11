@@ -32,7 +32,14 @@ public class GameManager : MonoBehaviour
             List<ItemsDTO> newList = new List<ItemsDTO>();
             Items newItem = new Items(data.GetData());
             newItem.GetData().amount = 1;
-            newItem.GetData().indexList = list.Count;
+            if (list != null)
+            {
+                newItem.GetData().indexList = list.Count;
+            }
+            else
+            {
+                newItem.GetData().indexList = 0;
+            }
             newList.Add(newItem.GetData());
             ItemsData.Data.Add(data.GetData().data.id, newList);
         }

@@ -16,7 +16,8 @@ public class InventoryManager : MonoBehaviour
     private List<GameObject> slotList = new List<GameObject>();
 
     private const string SlotNamePrefix = "Item ";
-    public List<int> emptySlot = new List<int>();
+    private List<int> emptySlot = new List<int>();
+    [SerializeField] private Dictionary<int,List<ItemsDTO>> listCanStack = new Dictionary<int, List<ItemsDTO>>();
 
     public event Action OnAddedItem;
 
@@ -53,7 +54,7 @@ public class InventoryManager : MonoBehaviour
 
                 foreach (var item in itemList)
                 {
-                    if (item.amount < 0)
+                    if (!item.data || item.amount < 0)
                     {
                         data[key].Remove(item);
                         continue;
@@ -62,9 +63,18 @@ public class InventoryManager : MonoBehaviour
                     slotList[item.indexSlot].GetComponent<SlotItem>().GetData().indexList = count;
                     emptySlot[item.indexSlot] = 0;
                     count++;
-                    if (item.amount < 64)
+                    if (item.amount < 64 && item.data.canStack)
                     {
-                        //TODO : ?
+                        if (listCanStack.TryGetValue(item.data.id, out List<ItemsDTO> list))
+                        {
+                            list.Add(item);
+                        }
+                        else
+                        {
+                            List<ItemsDTO> newList = new List<ItemsDTO>();
+                            newList.Add(item);
+                            listCanStack.Add(item.data.id,newList);
+                        }
                     }
                 }
             }
@@ -92,7 +102,7 @@ public class InventoryManager : MonoBehaviour
 
         enterItem.SetData(dragData);
 
-        dragItem.SetData(null);
+        dragItem.SetData(null,false);
 
         emptySlot[dragItem.index] = 1;
         emptySlot[enterItem.index] = 0;
@@ -103,7 +113,7 @@ public class InventoryManager : MonoBehaviour
         var firstData = firstItem.GetData();
         var secondData = secondItem.GetData();
 
-        if (firstData.data.id == secondData.data.id)
+        if (firstData.data.id == secondData.data.id && firstData.data.canStack)
         {
             gameManager.StackTwoItemHandler(firstData,secondData);
             return;
@@ -115,22 +125,51 @@ public class InventoryManager : MonoBehaviour
     {
         if (data.GetData().data.canStack)
         {
-
+            if (listCanStack.TryGetValue(data.GetData().data.id,out List<ItemsDTO> list))
+            {
+                foreach (ItemsDTO item in list)
+                {
+                    if (item.amount >= 64)
+                    {
+                        list.Remove(item);
+                        continue;
+                    }
+                    item.amount++;
+                    slotList[item.indexSlot].GetComponent<SlotItem>().SetData(item);
+                    OnAddedItem?.Invoke();
+                    return;
+                }
+                list.Add(data.GetData());
+                FindSlotInInventory(data);
+            }
+            else
+            {
+                List<ItemsDTO> newItem = new List<ItemsDTO>();
+                newItem.Add(data.GetData());
+                listCanStack.Add(data.GetData().data.id,newItem);
+                FindSlotInInventory(data);
+            }
         }
         else
         {
-            for (int i = 0; i < emptySlot.Count; i++)
-            {
-                if (emptySlot[i] == 0) continue;
-
-                slotList[i].GetComponent<SlotItem>().SetData(data.GetData());
-                emptySlot[i] = 0;
-                gameManager.AddItem(data);
-                OnAddedItem?.Invoke();
-                return;
-            }
-            print("Full inventory");
+            FindSlotInInventory(data);
         }
+    }
+
+    private void FindSlotInInventory(Items data)
+    {
+        for (int i = 0; i < emptySlot.Count; i++)
+        {
+            if (emptySlot[i] == 0) continue;
+
+            slotList[i].GetComponent<SlotItem>().SetData(data.GetData());
+            emptySlot[i] = 0;
+            
+            gameManager.AddItem(data);
+            OnAddedItem?.Invoke();
+            return;
+        }
+        print("Full inventory");
     }
     public void StackCompleteItem(ItemsDTO dragItem,ItemsDTO enterItem) 
     {

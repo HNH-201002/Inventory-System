@@ -42,7 +42,9 @@ public class SlotItem : MonoBehaviour
             _textMeshPro.text = "";
             return; 
         }
+
         _textMeshPro.transform.SetAsLastSibling();
+
         _textMeshPro.text = _data.amount.ToString();
         _data.indexSlot = index;
         _avatar.sprite = Resources.Load<Sprite>("Items/" + _data.data.avatarName);
