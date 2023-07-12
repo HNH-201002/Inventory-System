@@ -1,13 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class SlotItem : MonoBehaviour
 {
     public int index;
-    public bool isInHotBar;
     [SerializeField] private Image _avatar;
+    [SerializeField] private TMP_Text _textMeshPro;
+
+    public bool hasData = false;
     private Image Avatar
     {
         get
@@ -19,8 +22,12 @@ public class SlotItem : MonoBehaviour
             return _avatar;
         }
     }
-    private ItemDataScriptableObject _data;
+    private ItemsDTO _data;
 
+    public void Awake()
+    {
+        if (_textMeshPro == null) { _textMeshPro = GetComponent<TMP_Text>(); }
+    }
     public void Start()
     {
         LoadData();
@@ -28,11 +35,17 @@ public class SlotItem : MonoBehaviour
 
     private void LoadData()
     {
-        if (!_data) 
+
+        if (!hasData) 
         {
             SetAvatar(null);
+            _textMeshPro.text = "";
             return; 
         }
+
+        _textMeshPro.transform.SetAsLastSibling();
+
+        _textMeshPro.text = _data.amount.ToString();
         _data.indexSlot = index;
         _avatar.sprite = Resources.Load<Sprite>("Items/" + _data.data.avatarName);
         SetAvatar(_avatar.sprite);
@@ -67,12 +80,13 @@ public class SlotItem : MonoBehaviour
         if (_avatar == null) return null ;
         return Avatar.sprite;
     }
-    public void SetData(ItemDataScriptableObject data)
+    public void SetData(ItemsDTO data,bool check = true)
     {
-        this._data = data;
+        _data = data;
+        hasData = check;
         LoadData();
     }
-    public ItemDataScriptableObject GetData()
+    public ItemsDTO GetData()
     {
         return _data;
     }

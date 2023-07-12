@@ -13,7 +13,7 @@ public class ItemScriptableObject : ScriptableObject
     public string avatarName;
     public TypeItem typeItem;
     public bool canConsume;
-    public bool isStack;
+    public bool canStack;
     [Serializable]
     public enum TypeItem
     {

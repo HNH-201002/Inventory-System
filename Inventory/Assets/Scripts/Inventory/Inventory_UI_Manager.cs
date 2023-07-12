@@ -17,7 +17,7 @@ public class Inventory_UI_Manager : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E))
+        if (Input.GetKeyDown(KeyCode.Tab))
         {
             toggle = !toggle;
             if (toggle)

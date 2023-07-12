@@ -17,4 +17,4 @@ MonoBehaviour:
   avatarName: armor
   typeItem: 0
   canConsume: 0
-  isStack: 0
+  canStack: 1
