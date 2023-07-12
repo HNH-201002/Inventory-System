@@ -77,8 +77,7 @@ public class SlotItem : MonoBehaviour
     }
     public Sprite GetAvatar()
     {
-        if (_avatar == null) return null ;
-        return Avatar.sprite;
+        return _avatar?.sprite;
     }
     public void SetData(ItemsDTO data,bool check = true)
     {

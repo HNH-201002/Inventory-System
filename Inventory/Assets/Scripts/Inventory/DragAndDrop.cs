@@ -28,7 +28,7 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
     public void OnBeginDrag(PointerEventData eventData)
     {
         parentDrag = transform.parent;
-        if (gameObject.GetComponent<DragAndDrop>() == null) return;
+        if (gameObject.GetComponent<DragAndDrop>() == null || eventData.button != PointerEventData.InputButton.Left) return;
         transform.SetParent(AlwaysOnTop.transform);
         transform.SetAsLastSibling();
         _oriPosition = _rectTransform.anchoredPosition;
@@ -42,6 +42,7 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         if (eventData.pointerDrag.GetComponent<DragAndDrop>().GetComponent<Image>().sprite == null) return;
         if (eventData.pointerDrag.GetComponent<DragAndDrop>() == null)
             return;
+        if(eventData.button != PointerEventData.InputButton.Left) { return; }
         if (_canvas == null)
         {
             _canvas = GetComponentInParent<Canvas>();
@@ -56,6 +57,7 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         transform.SetParent(parentDrag.transform);
         eventData.pointerDrag.GetComponentInParent<SlotItem>().GetComponentInChildren<TMP_Text>().transform.SetAsLastSibling();
         if (!eventData.pointerDrag || !eventData.pointerEnter) { return; }
+
         if (gameObject.GetComponent<DragAndDrop>() == null
               ||
               eventData.pointerEnter.GetComponent<DragAndDrop>() == null ||
@@ -63,7 +65,7 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         {
             return;
         }
-
+        if (eventData.button != PointerEventData.InputButton.Left) { return; }
         SlotItem enterItem = eventData.pointerEnter.GetComponentInParent<SlotItem>();
         Image enterItemImage = eventData.pointerEnter.GetComponent<Image>();
         SlotItem dragItem = gameObject.GetComponentInParent<SlotItem>();
@@ -78,5 +80,10 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         {
             OnSwapItems?.Invoke(dragItem, enterItem);
         }
+
+    }
+    public void ResetPosition()
+    {
+        _rectTransform.anchoredPosition = _oriPosition;
     }
 }

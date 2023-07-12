@@ -12,12 +12,13 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private GameObject hotBarContainer;
     [SerializeField] private GameObject alwaysOnTop;
     [SerializeField] private GameManager gameManager;
+ 
 
     private List<GameObject> slotList = new List<GameObject>();
 
     private const string SlotNamePrefix = "Item ";
     private List<int> emptySlot = new List<int>();
-    [SerializeField] private Dictionary<int,List<ItemsDTO>> listCanStack = new Dictionary<int, List<ItemsDTO>>();
+    private Dictionary<int,List<ItemsDTO>> listCanStack = new Dictionary<int, List<ItemsDTO>>();
 
     public event Action OnAddedItem;
 
@@ -32,19 +33,20 @@ public class InventoryManager : MonoBehaviour
     private void Start()
     {
         var data = gameManager.LoadData().Data;
-        for (int i = 0; i < inventorySlotsCount; i++)
-        {
-            GameObject slotItemGO = CreateSlotItem(inventoryContainer,i);
-            slotList.Add(slotItemGO);
-            emptySlot.Add(1);
-        }
 
-        for (int i = 0; i < hotbarSlotsCount; i++)
-        {
-            GameObject slotItemGO = CreateSlotItem(hotBarContainer, i + inventorySlotsCount);
-            slotList.Add(slotItemGO);
-            emptySlot.Add(1);
-        }
+        var inventorySlotItems = Enumerable.Range(0, inventorySlotsCount)
+                                 .Select(i => CreateSlotItem(inventoryContainer,i))
+                                 .ToList();
+        slotList.AddRange(inventorySlotItems);
+        emptySlot.AddRange(Enumerable.Repeat(1,inventorySlotsCount));
+
+        var hotbarSlotItems = Enumerable.Range(0,hotbarSlotsCount)
+                              .Select(i => CreateSlotItem(hotBarContainer,i + inventorySlotsCount))
+                              .ToList();
+        slotList.AddRange(hotbarSlotItems);
+        emptySlot.AddRange(Enumerable.Repeat(1,hotbarSlotsCount));
+
+
         if (data != null && data.Count > 0)
         {
             foreach (var key in data.Keys.ToList()) 
@@ -52,34 +54,32 @@ public class InventoryManager : MonoBehaviour
                 int count = 0;
                 var itemList = data[key].ToList();
 
+                itemList.RemoveAll(item => !item.data || item.amount < 0);
+
                 foreach (var item in itemList)
                 {
-                    if (!item.data || item.amount < 0)
-                    {
-                        data[key].Remove(item);
-                        continue;
-                    }
-                    slotList[item.indexSlot].GetComponent<SlotItem>().SetData(item);
-                    slotList[item.indexSlot].GetComponent<SlotItem>().GetData().indexList = count;
+                    var slotItem = slotList[item.indexSlot].GetComponent<SlotItem>();
+                    slotItem.SetData(item);
+                    slotItem.GetData().indexList = count;
                     emptySlot[item.indexSlot] = 0;
                     count++;
-                    if (item.amount < 64 && item.data.canStack)
+
+                    if (!(item.amount < 64 && item.data.canStack)) 
+                        continue;
+
+                    if (listCanStack.TryGetValue(item.data.id, out var list))
                     {
-                        if (listCanStack.TryGetValue(item.data.id, out List<ItemsDTO> list))
-                        {
-                            list.Add(item);
-                        }
-                        else
-                        {
-                            List<ItemsDTO> newList = new List<ItemsDTO>();
-                            newList.Add(item);
-                            listCanStack.Add(item.data.id,newList);
-                        }
+                        list.Add(item);
+                    }
+                    else
+                    {
+                        listCanStack.Add(item.data.id,new List<ItemsDTO> { item });
                     }
                 }
             }
         }
     }
+
     private GameObject CreateSlotItem(GameObject parentContainer, int index)
     {
         GameObject slotItemGO = Instantiate(slotItem, parentContainer.transform.localPosition, Quaternion.identity);
@@ -87,12 +87,12 @@ public class InventoryManager : MonoBehaviour
         slotItemGO.GetComponent<RectTransform>().localScale = Vector3.one;
         slotItemGO.name = SlotNamePrefix + index;
 
-        var dragAndDrop = slotItemGO.GetComponent<SlotItem>().GetComponentInChildren<DragAndDrop>();
+        var slotItemGOComponent = slotItemGO.GetComponent<SlotItem>();
+        var dragAndDrop = slotItemGOComponent.GetComponentInChildren<DragAndDrop>();
         dragAndDrop.AlwaysOnTop = alwaysOnTop;
         dragAndDrop.inventoryManager = this;
 
-        var slotItemComponent = slotItemGO.GetComponent<SlotItem>();
-        slotItemComponent.index = index;
+        slotItemGOComponent.index = index;
 
         return slotItemGO;
     }
@@ -123,11 +123,12 @@ public class InventoryManager : MonoBehaviour
     }
     public void Add(Items data,bool check = false)
     {
-        if (data.GetData().data.canStack)
+        var itemData = data.GetData().data;
+        if (itemData.canStack)
         {
-            if (listCanStack.TryGetValue(data.GetData().data.id,out List<ItemsDTO> list))
+            if (listCanStack.TryGetValue(itemData.id,out List<ItemsDTO> list))
             {
-                foreach (ItemsDTO item in list)
+                foreach (var item in list.ToList())
                 {
                     if (item.amount >= 64)
                     {
@@ -140,31 +141,25 @@ public class InventoryManager : MonoBehaviour
                     return;
                 }
                 list.Add(data.GetData());
-                FindSlotInInventory(data);
             }
-            else
-            {
-                List<ItemsDTO> newItem = new List<ItemsDTO>();
-                newItem.Add(data.GetData());
-                listCanStack.Add(data.GetData().data.id,newItem);
-                FindSlotInInventory(data);
+            else 
+            { 
+                listCanStack.Add(itemData.id,new List<ItemsDTO> { data.GetData()});
             }
         }
-        else
-        {
-            FindSlotInInventory(data);
-        }
+
+        FindSlotInInventory(data);
     }
 
     private void FindSlotInInventory(Items data)
     {
-        for (int i = 0; i < emptySlot.Count; i++)
-        {
-            if (emptySlot[i] == 0) continue;
+        int emptySlotIndex = emptySlot.FindIndex(slot => slot == 1);
 
-            slotList[i].GetComponent<SlotItem>().SetData(data.GetData());
-            emptySlot[i] = 0;
-            
+        if (emptySlotIndex != -1)
+        {
+            slotList[emptySlotIndex].GetComponent<SlotItem>().SetData(data.GetData());
+            emptySlot[emptySlotIndex] = 0;
+
             gameManager.AddItem(data);
             OnAddedItem?.Invoke();
             return;
