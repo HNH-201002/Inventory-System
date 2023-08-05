@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using static UnityEditor.Progress;
 
 public class GameManager : MonoBehaviour
 {
@@ -25,7 +24,10 @@ public class GameManager : MonoBehaviour
         if (ItemsData.Data.TryGetValue(itemId, out var list))
         {
             var newItem = new Items(itemData);
-            newItem.GetData().amount = 1;
+            if (newItem.GetData().amount <= 0)
+            {
+                newItem.GetData().amount = 1;
+            }
             newItem.GetData().indexList = list.Count;
             list.Add(newItem.GetData());
         }
@@ -65,5 +67,18 @@ public class GameManager : MonoBehaviour
             OnStackWithRemainder?.Invoke(list[dragItem.indexList], list[enterItem.indexList]);
         }
 
+    }
+    public void StackOriginalItem(ItemsDTO dragItem, ItemsDTO enterItem)
+    {
+        if (!ItemsData.Data.TryGetValue(enterItem.data.id, out var list))
+        {
+            Debug.LogError("Cannot find this item");
+            return;
+        }
+
+        int quantity = dragItem.amount + enterItem.amount;
+
+        list[enterItem.indexList].amount += dragItem.amount;
+        OnStackCompleteItem?.Invoke(dragItem, list[enterItem.indexList]);
     }
 }

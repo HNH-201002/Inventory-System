@@ -1,4 +1,5 @@
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Networking;
@@ -13,6 +14,7 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
     private CanvasGroup _canvasGroup;
     private Vector2 _oriPosition;
     Transform parentDrag;
+    TMP_Text amountText;
 
     public delegate void ItemMoveDelegate(SlotItem dragItem, SlotItem enterItem);
 
@@ -25,10 +27,16 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         _canvasGroup = GetComponent<CanvasGroup>();
         _canvas = GetComponentInParent<Canvas>();
     }
+    public void Start()
+    {
+        Inventory_UI_Manager.OnMenuOpenClose += ResetPosition;
+    }
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (eventData.button != PointerEventData.InputButton.Left) { return; }
         parentDrag = transform.parent;
         if (gameObject.GetComponent<DragAndDrop>() == null || eventData.button != PointerEventData.InputButton.Left) return;
+        amountText = eventData.pointerDrag.GetComponentInParent<SlotItem>().GetComponentInChildren<TMP_Text>();
         transform.SetParent(AlwaysOnTop.transform);
         transform.SetAsLastSibling();
         _oriPosition = _rectTransform.anchoredPosition;
@@ -38,6 +46,7 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (eventData.button != PointerEventData.InputButton.Left) { return; }
         if (!eventData.pointerDrag) { return; }
         if (eventData.pointerDrag.GetComponent<DragAndDrop>().GetComponent<Image>().sprite == null) return;
         if (eventData.pointerDrag.GetComponent<DragAndDrop>() == null)
@@ -51,13 +60,14 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
     }
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (eventData.button != PointerEventData.InputButton.Left) { return; }
         _rectTransform.anchoredPosition = _oriPosition;
         _canvasGroup.alpha = 1;
         _canvasGroup.blocksRaycasts = true;
         transform.SetParent(parentDrag.transform);
-        eventData.pointerDrag.GetComponentInParent<SlotItem>().GetComponentInChildren<TMP_Text>().transform.SetAsLastSibling();
+        amountText.transform.SetAsLastSibling();
         if (!eventData.pointerDrag || !eventData.pointerEnter) { return; }
-
+        if (eventData.button != PointerEventData.InputButton.Left) { return; }
         if (gameObject.GetComponent<DragAndDrop>() == null
               ||
               eventData.pointerEnter.GetComponent<DragAndDrop>() == null ||
@@ -65,7 +75,6 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         {
             return;
         }
-        if (eventData.button != PointerEventData.InputButton.Left) { return; }
         SlotItem enterItem = eventData.pointerEnter.GetComponentInParent<SlotItem>();
         Image enterItemImage = eventData.pointerEnter.GetComponent<Image>();
         SlotItem dragItem = gameObject.GetComponentInParent<SlotItem>();
@@ -82,8 +91,19 @@ public class DragAndDrop : MonoBehaviour , IDragHandler,IBeginDragHandler,IEndDr
         }
 
     }
-    public void ResetPosition()
+    public void ResetPosition(bool isOpen)
     {
-        _rectTransform.anchoredPosition = _oriPosition;
+        if (!isOpen && !_canvasGroup.blocksRaycasts)
+        {
+            _rectTransform.anchoredPosition = _oriPosition;
+            _canvasGroup.alpha = 1;
+            _canvasGroup.blocksRaycasts = true;
+            transform.SetParent(parentDrag.transform);
+            amountText.transform.SetAsLastSibling();
+        }
+    }
+    private void OnDisable()
+    {
+        Inventory_UI_Manager.OnMenuOpenClose -= ResetPosition;
     }
 }

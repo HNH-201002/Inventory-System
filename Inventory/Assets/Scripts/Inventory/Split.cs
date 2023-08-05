@@ -1,42 +1,50 @@
-﻿using Unity.VisualScripting;
+﻿using System;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-public class Split : MonoBehaviour, IPointerClickHandler
+public class Split : MonoBehaviour
 {
-    private RectTransform rectTransform;
-    private CanvasGroup canvasGroup;
-    private Canvas canvas;
+    [SerializeField] private Image _avatar;
+    [SerializeField] private TMP_Text _amount;
+    public static Action<ItemsDTO,SlotItem,GameObject> OnSplitItem; // Sự kiện trả về cả item và vị trí slot
+    ItemsDTO data;
 
-    private bool isDragging = false;
-    private PointerEventData _eventData;
-
-    private void Awake()
+    public void SetData(ItemsDTO data)
     {
-        rectTransform = GetComponent<RectTransform>();
-        canvasGroup = GetComponent<CanvasGroup>();
-        canvas = GetComponentInParent<Canvas>();
+        this.data = data;
+        _avatar.sprite = Resources.Load<Sprite>("Items/" + data.data.avatarName);
+        _amount.text = data.amount.ToString();
     }
 
-    public void OnPointerClick(PointerEventData eventData)
+    private void Update()
     {
-        if (eventData.pointerEnter == null)
-            return;
-        if (!eventData.pointerEnter.GetComponent<SlotItem>())
-            return;
-        if (!eventData.pointerEnter.GetComponentInChildren<DragAndDrop>())
-            return;
-        if (eventData.button == PointerEventData.InputButton.Right)
+        gameObject.transform.position = Input.mousePosition;
+        if (Input.GetMouseButtonDown(0))
         {
-            isDragging = !isDragging;
-            _eventData = eventData;
+            RaycastToUI();
         }
     }
-    public void FixedUpdate()
+    private void RaycastToUI()
     {
-        if (isDragging)
+        PointerEventData eventData = new PointerEventData(EventSystem.current);
+        eventData.position = Input.mousePosition;
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+
+        foreach (RaycastResult result in results)
         {
-            rectTransform.anchoredPosition += _eventData.delta / canvas.scaleFactor;
+            if (result.gameObject != gameObject)
+            {
+                if (result.gameObject.GetComponentInParent<SlotItem>())
+                {
+                    OnSplitItem?.Invoke(data,result.gameObject.GetComponentInParent<SlotItem>(),gameObject);
+                }
+                break; 
+            }
         }
     }
 }

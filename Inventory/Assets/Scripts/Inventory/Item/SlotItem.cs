@@ -27,6 +27,7 @@ public class SlotItem : MonoBehaviour
     public void Awake()
     {
         if (_textMeshPro == null) { _textMeshPro = GetComponent<TMP_Text>(); }
+        if (_avatar == null) { _avatar = GetComponent<Image>(); }
     }
     public void Start()
     {
@@ -47,8 +48,11 @@ public class SlotItem : MonoBehaviour
 
         _textMeshPro.text = _data.amount.ToString();
         _data.indexSlot = index;
-        _avatar.sprite = Resources.Load<Sprite>("Items/" + _data.data.avatarName);
-        SetAvatar(_avatar.sprite);
+        if (_avatar != null && _data.data != null)
+        {
+            _avatar.sprite = Resources.Load<Sprite>("Items/" + _data.data.avatarName);
+            SetAvatar(_avatar.sprite);
+        }
     }
 
     public void SetAvatar(Sprite avatar)

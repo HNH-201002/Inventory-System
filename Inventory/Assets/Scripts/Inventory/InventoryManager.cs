@@ -2,16 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class InventoryManager : MonoBehaviour
 {
     [SerializeField] private int hotbarSlotsCount;
     [SerializeField] private int inventorySlotsCount;
+
     [SerializeField] private GameObject slotItem;
+    [SerializeField] private GameObject grabSlotItem;
+
     [SerializeField] private GameObject inventoryContainer;
     [SerializeField] private GameObject hotBarContainer;
     [SerializeField] private GameObject alwaysOnTop;
     [SerializeField] private GameManager gameManager;
+    [SerializeField] private GameObject canvas;
+
  
 
     private List<GameObject> slotList = new List<GameObject>();
@@ -22,6 +28,11 @@ public class InventoryManager : MonoBehaviour
 
     public event Action OnAddedItem;
 
+
+    private GameObject grabSlotItemGO;
+    private Vector3 mousePositionOffset;
+    private bool isGrabbing = false;
+
     private void Awake()
     {
         DragAndDrop.OnMoveItem += MoveItem;
@@ -29,6 +40,8 @@ public class InventoryManager : MonoBehaviour
         GameManager.OnFullStack += Add;
         GameManager.OnStackCompleteItem += StackCompleteItem;
         GameManager.OnStackWithRemainder += StackWithRemainder;
+        OptionItem.OnSubmitAmountOfItem += SplitItem;
+        Split.OnSplitItem += HandleItemAfterSplit;
     }
     private void Start()
     {
@@ -53,11 +66,15 @@ public class InventoryManager : MonoBehaviour
             {
                 int count = 0;
                 var itemList = data[key].ToList();
-
-                itemList.RemoveAll(item => !item.data || item.amount < 0);
-
+                data[key].RemoveAll(item => item.data == null || item.amount < 0);
+                itemList.RemoveAll(item => item.data == null || item.amount < 0);
                 foreach (var item in itemList)
                 {
+                    if (item.data == null)
+                    {
+                        data.Remove(item.indexList);
+                        continue;
+                    }
                     var slotItem = slotList[item.indexSlot].GetComponent<SlotItem>();
                     slotItem.SetData(item);
                     slotItem.GetData().indexList = count;
@@ -76,6 +93,7 @@ public class InventoryManager : MonoBehaviour
                         listCanStack.Add(item.data.id,new List<ItemsDTO> { item });
                     }
                 }
+
             }
         }
     }
@@ -91,9 +109,7 @@ public class InventoryManager : MonoBehaviour
         var dragAndDrop = slotItemGOComponent.GetComponentInChildren<DragAndDrop>();
         dragAndDrop.AlwaysOnTop = alwaysOnTop;
         dragAndDrop.inventoryManager = this;
-
         slotItemGOComponent.index = index;
-
         return slotItemGO;
     }
     public void MoveItem(SlotItem dragItem, SlotItem enterItem) 
@@ -164,7 +180,7 @@ public class InventoryManager : MonoBehaviour
             OnAddedItem?.Invoke();
             return;
         }
-        print("Full inventory");
+        Debug.LogWarning("Full inventory");
     }
     public void StackCompleteItem(ItemsDTO dragItem,ItemsDTO enterItem) 
     {
@@ -177,6 +193,57 @@ public class InventoryManager : MonoBehaviour
         slotList[dragItem.indexSlot].GetComponent<SlotItem>().SetData(dragItem, true);
         slotList[enterItem.indexSlot].GetComponent<SlotItem>().SetData(enterItem, true);
     }
+    public void SplitItem(int slotItem, int amount)
+    {
+        SlotItem slotItemComponent = slotList[slotItem].GetComponent<SlotItem>();
+
+        slotItemComponent.GetData().amount -= amount;
+        ItemsDTO itemsDTO = slotItemComponent.GetData();
+        slotItemComponent.SetData(itemsDTO);
+
+        // Tạo một bản sao mới để truyền dữ liệu đến GameObject grabSlotItemGO
+        ItemsDTO grabItemsDTO = new ItemsDTO(slotItemComponent.GetData());
+        grabItemsDTO.amount = amount;
+
+        GameObject grabSlotItemGO = Instantiate(grabSlotItem);
+        grabSlotItemGO.GetComponent<Split>().SetData(grabItemsDTO);
+        grabSlotItemGO.GetComponentInChildren<DragAndDrop>().AlwaysOnTop = alwaysOnTop;
+        grabSlotItemGO.GetComponentInChildren<DragAndDrop>().inventoryManager = this;
+
+        grabSlotItemGO.transform.SetParent(alwaysOnTop.transform);
+    }
+
+    public void HandleItemAfterSplit(ItemsDTO data, SlotItem slotItemGO, GameObject goj)
+    {
+        SlotItem slotItemComponent = slotItemGO.GetComponent<SlotItem>();
+
+        if (slotItemComponent.hasData)
+        {
+            ItemsDTO slotData = slotItemComponent.GetData();
+            if (slotData.indexSlot == data.indexSlot)
+            {
+                gameManager.StackOriginalItem(data, slotData);
+            }
+            else if (slotData.data.avatarName == data.data.avatarName)
+            {
+                gameManager.StackTwoItemHandler(data, slotData);
+            }
+            else
+            {
+                Debug.LogWarning("Not same type item");
+            }
+        }
+        else
+        {
+            slotList[slotItemGO.index].GetComponent<SlotItem>().SetData(data);
+            emptySlot[slotItemGO.index] = 0;
+
+            Items items = new Items(data);
+            gameManager.AddItem(items);
+        }
+
+        goj.SetActive(false);
+    }
     private void OnDisable()
     {
         var dragAndDrop = GetComponent<DragAndDrop>();
@@ -186,6 +253,8 @@ public class InventoryManager : MonoBehaviour
         GameManager.OnFullStack -= Add;
         GameManager.OnStackCompleteItem -= StackCompleteItem;
         GameManager.OnStackWithRemainder -= StackWithRemainder;
+
+        Split.OnSplitItem -= HandleItemAfterSplit;
     }
 
 }

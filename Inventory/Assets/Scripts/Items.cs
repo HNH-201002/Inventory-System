@@ -33,6 +33,21 @@ public class Items : MonoBehaviour
 [Serializable]
 public class ItemsDTO
 {
+    public ItemsDTO()
+    {
+        // Khởi tạo các giá trị mặc định tại đây nếu cần thiết
+        data = null;
+        amount = 1;
+        indexSlot = 0;
+        indexList = 0;
+    }
+    public ItemsDTO(ItemsDTO itemsDTO)
+    {
+        data = itemsDTO.data;
+        amount = itemsDTO.amount;
+        indexList = itemsDTO.indexList;
+        indexSlot = itemsDTO.indexSlot;
+    }
     public ItemScriptableObject data;
     public int amount;
     public int indexSlot;
